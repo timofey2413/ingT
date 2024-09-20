@@ -1,41 +1,65 @@
+# подключаем библиотеку компьютерного зрения 
 import cv2
-import numpy as np
 
-# https://raw.githubusercontent.com/opencv/opencv/master/samples/dnn/face_detector/deploy.prototxt
-prototxt_path = "weights/deploy.prototxt.txt"
-# https://raw.githubusercontent.com/opencv/opencv_3rdparty/dnn_samples_face_detector_20180205_fp16/res10_300x300_ssd_iter_140000_fp16.caffemodel 
-model_path = "weights/res10_300x300_ssd_iter_140000_fp16.caffemodel"
+# функция определения лиц
+def highlightFace(net, frame, conf_threshold=0.7):
+    # делаем копию текущего кадра
+    frameOpencvDnn=frame.copy()
+    # высота и ширина кадра
+    frameHeight=frameOpencvDnn.shape[0]
+    frameWidth=frameOpencvDnn.shape[1]
+    # преобразуем картинку в двоичный пиксельный объект
+    blob=cv2.dnn.blobFromImage(frameOpencvDnn, 1.0, (300, 300), [104, 117, 123], True, False)
+    # устанавливаем этот объект как входной параметр для нейросети
+    net.setInput(blob)
+    # выполняем прямой проход для распознавания лиц
+    detections=net.forward()
+    # переменная для рамок вокруг лица
+    faceBoxes=[]
+    # перебираем все блоки после распознавания
+    for i in range(detections.shape[2]):
+        # получаем результат вычислений для очередного элемента
+        confidence=detections[0,0,i,2]
+        # если результат превышает порог срабатывания — это лицо
+        if confidence>conf_threshold:
+            # формируем координаты рамки
+            x1=int(detections[0,0,i,3]*frameWidth)
+            y1=int(detections[0,0,i,4]*frameHeight)
+            x2=int(detections[0,0,i,5]*frameWidth)
+            y2=int(detections[0,0,i,6]*frameHeight)
+            # добавляем их в общую переменную
+            faceBoxes.append([x1,y1,x2,y2])
+            # рисуем рамку на кадре
+            cv2.rectangle(frameOpencvDnn, (x1,y1), (x2,y2), (0,255,0), int(round(frameHeight/150)), 8)
+    # возвращаем кадр с рамками
+    return frameOpencvDnn,faceBoxes
 
-# load Caffe model
-model = cv2.dnn.readNetFromCaffe(prototxt_path, model_path)
+# загружаем веса для распознавания лиц
+faceProto="opencv_face_detector.pbtxt"
+# и конфигурацию самой нейросети — слои и связи нейронов
+faceModel="opencv_face_detector_uint8.pb"
 
-# read the desired image
-image = cv2.imread("pushkin.jpg")
-# get width and height of the image
-h, w = image.shape[:2]
+# запускаем нейросеть по распознаванию лиц
+faceNet=cv2.dnn.readNet(faceModel,faceProto)
 
-# preprocess the image: resize and performs mean subtraction
-blob = cv2.dnn.blobFromImage(image, 1.0, (300, 300), (104.0, 177.0, 123.0))
-# set the image into the input of the neural network
-model.setInput(blob)
-# perform inference and get the result
-output = np.squeeze(model.forward())
-font_scale = 1.0
-for i in range(0, output.shape[0]):
-    # get the confidence
-    confidence = output[i, 2]
-    # if confidence is above 50%, then draw the surrounding box
-    if confidence > 0.5:
-        # get the surrounding box cordinates and upscale them to original image
-        box = output[i, 3:7] * np.array([w, h, w, h])
-        # convert to integers
-        start_x, start_y, end_x, end_y = box.astype(np.int64)
-        # draw the rectangle surrounding the face
-        cv2.rectangle(image, (start_x, start_y), (end_x, end_y), color=(255, 0, 0), thickness=2)
-        # draw text as well
-        cv2.putText(image, f"{confidence*100:.2f}%", (start_x, start_y-5), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (255, 0, 0), 2)
-# show the image
-cv2.imshow("image", image)
-cv2.waitKey(0)
-# save the image with rectangles
-cv2.imwrite("pushkin_detected_dnn.jpg", image)
+# получаем видео с камеры
+video=cv2.VideoCapture(0)
+# пока не нажата любая клавиша — выполняем цикл
+while cv2.waitKey(1)<0:
+    # получаем очередной кадр с камеры
+    hasFrame,frame=video.read()
+    # если кадра нет
+    if not hasFrame:
+        # останавливаемся и выходим из цикла
+        cv2.waitKey()
+        break
+    # распознаём лица в кадре
+    resultImg,faceBoxes=highlightFace(faceNet,frame)
+    # если лиц нет
+    if not faceBoxes:
+        # выводим в консоли, что лицо не найдено
+        print("Лица не распознаны")
+    # выводим картинку с камеры
+    cv2.imshow("Face detection", resultImg)
+    cropped = frameOpencvDnn[100:y2, x1:x2]
+    cv2.imwrite("image.jpg", cropped)
