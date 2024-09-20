@@ -1,30 +1,36 @@
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
-from tensorflow.keras.datasets import mnist
+import cv2
+from fer import FER
 
-# Загрузка данных
-(x_train, y_train), (x_test, y_test) = mnist.load_data()
+# Initialize the webcam
+cap = cv2.VideoCapture(0)
 
-# Предварительная обработка данных
-x_train = x_train.astype('float32') / 255.0
-x_test = x_test.astype('float32') / 255.0
+while True:
+    # Read a frame from the webcam
+    ret, frame = cap.read()
+    
+    # Convert the frame to RGB (FER expects RGB images)
+    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    
+    # Create an instance of the FER detector
+    emo_detector = FER(mtcnn=True)
+    
+    # Detect emotions in the frame
+    captured_emotions = emo_detector.detect_emotions(frame_rgb)
+    
+    # Get the dominant emotion and its score
+    dominant_emotion, emotion_score = emo_detector.top_emotion(frame_rgb)
+    
+    # Print the detected emotions and dominant emotion
+    print("Captured emotions:", captured_emotions)
+    print("Dominant emotion:", dominant_emotion, "with score:", emotion_score)
+    
+    # Display the frame with the detected emotions
+    cv2.imshow("Detected Emotions", frame)
+    
+    # Exit on key press
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
 
-# Создание модели
-model = Sequential()
-model.add(Conv2D(32, (3, 3), activation='relu', input_shape=(28, 28, 1)))
-model.add(MaxPooling2D((2, 2)))
-model.add(Flatten())
-model.add(Dense(10, activation='softmax'))
-
-# Компиляция модели
-model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-
-# Обучение модели
-model.fit(x_train, y_train, epochs=5, batch_size=32)
-
-# Оценка модели
-loss, accuracy = model.evaluate(x_test, y_test)
-print(f'Loss: {loss}, Accuracy: {accuracy}')
-
-# Сохранение модели
-model.save('emotion_model.h5')
+# Release the webcam and close the window
+cap.release()
+cv2.destroyAllWindows()
