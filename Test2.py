@@ -1,36 +1,33 @@
 import cv2
-from fer import FER
+import numpy as np
 
-# Initialize the webcam
+# Load the cascade classifier for face detection
+face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+
+# Create a video capture object
 cap = cv2.VideoCapture(0)
 
 while True:
-    # Read a frame from the webcam
+    # Read a frame from the camera
     ret, frame = cap.read()
     
-    # Convert the frame to RGB (FER expects RGB images)
-    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    # Convert the frame to grayscale
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     
-    # Create an instance of the FER detector
-    emo_detector = FER(mtcnn=True)
+    # Detect faces in the grayscale image
+    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
     
-    # Detect emotions in the frame
-    captured_emotions = emo_detector.detect_emotions(frame_rgb)
+    # Draw a red square around each face
+    for (x, y, w, h) in faces:
+        cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 0, 255), 2)
     
-    # Get the dominant emotion and its score
-    dominant_emotion, emotion_score = emo_detector.top_emotion(frame_rgb)
-    
-    # Print the detected emotions and dominant emotion
-    print("Captured emotions:", captured_emotions)
-    print("Dominant emotion:", dominant_emotion, "with score:", emotion_score)
-    
-    # Display the frame with the detected emotions
-    cv2.imshow("Detected Emotions", frame)
+    # Display the output
+    cv2.imshow('Face Detection', frame)
     
     # Exit on key press
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
-# Release the webcam and close the window
+# Release the video capture object
 cap.release()
 cv2.destroyAllWindows()
