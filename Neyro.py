@@ -7,35 +7,41 @@ prototxt_path = "weights/deploy.prototxt.txt"
 model_path = "weights/res10_300x300_ssd_iter_140000_fp16.caffemodel"
 
 # load Caffe model
-model = cv2.dnn.readNetFromCaffe(prototxt_path, model_path)
 
-# read the desired image
-image = cv2.imread("pushkin.jpg")
-# get width and height of the image
-h, w = image.shape[:2]
+cap = cv2.VideoCapture(0)
+while True:
+    model = cv2.dnn.readNetFromCaffe(prototxt_path, model_path)
+    # read the desired image
+    _, image = cap.read()
+    # get width and height of the image
+    h, w = image.shape[:2]
+    # preprocess the image: resize and performs mean subtraction
+    blob = cv2.dnn.blobFromImage(image, 1.0, (300, 300), (104.0, 177.0, 123.0))
+    # set the image into the input of the neural network
+    model.setInput(blob)
+    # perform inference and get the result
+    output = np.squeeze(model.forward())
+    font_scale = 1.0
+    for i in range(0, output.shape[0]):
+        # get the confidence
+        confidence = output[i, 2]
+        # if confidence is above 50%, then draw the surrounding box
+        if confidence > 0.5:
+            # get the surrounding box cordinates and upscale them to original image
+            box = output[i, 3:7] * np.array([w, h, w, h])
+            # convert to integers
+            start_x, start_y, end_x, end_y = box.astype(np.int64)
+            # draw the rectangle surrounding the face
+            cv2.rectangle(image, (start_x, start_y), (end_x, end_y), color=(255, 0, 0), thickness=2)
+            # draw text as well
+            cropped = image[start_y:end_y, start_x:end_x]
+            #cv2.putText(image, f"{confidence*100:.2f}%", (start_x, start_y-5), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (255, 0, 0), 2)
+    # show the image
+    cv2.imshow("image", cropped)
+    cv2.waitKey(0)
+    # save the image with rectangles
+    #cv2.imwrite("pushkin_detected_dnn.jpg", cropped)
+    #if cv2.waitKey(1) == ord("q"):
+     #       break
 
-# preprocess the image: resize and performs mean subtraction
-blob = cv2.dnn.blobFromImage(image, 1.0, (300, 300), (104.0, 177.0, 123.0))
-# set the image into the input of the neural network
-model.setInput(blob)
-# perform inference and get the result
-output = np.squeeze(model.forward())
-font_scale = 1.0
-for i in range(0, output.shape[0]):
-    # get the confidence
-    confidence = output[i, 2]
-    # if confidence is above 50%, then draw the surrounding box
-    if confidence > 0.5:
-        # get the surrounding box cordinates and upscale them to original image
-        box = output[i, 3:7] * np.array([w, h, w, h])
-        # convert to integers
-        start_x, start_y, end_x, end_y = box.astype(np.int64)
-        # draw the rectangle surrounding the face
-        cv2.rectangle(image, (start_x, start_y), (end_x, end_y), color=(255, 0, 0), thickness=2)
-        # draw text as well
-        cv2.putText(image, f"{confidence*100:.2f}%", (start_x, start_y-5), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (255, 0, 0), 2)
-# show the image
-cv2.imshow("image", image)
-cv2.waitKey(0)
-# save the image with rectangles
-cv2.imwrite("pushkin_detected_dnn.jpg", image)
+    cap.release()
