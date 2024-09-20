@@ -1,12 +1,18 @@
 import cv2
 import numpy as np
 from keras.models import load_model
+import os
 
 # Load the cascade classifier for face detection
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
-# Load the emotion recognition model
-emotion_model = load_model('emotion_model.h5')
+# Check if the emotion recognition model file exists
+if os.path.exists('emotion_recognition_model.h5'):
+    # Load the emotion recognition model
+    emotion_model = load_model('emotion_recognition_model.h5')
+else:
+    print("Error: File 'emotion_recogniton_model.h5' not found.")
+    exit()
 
 # Create a video capture object
 cap = cv2.VideoCapture(0)
@@ -29,11 +35,14 @@ while True:
         # Resize the face ROI to the input size of the emotion model
         face_roi = cv2.resize(face_roi, (48, 48))
         
+        # Convert grayscale to RGB
+        face_roi = cv2.cvtColor(face_roi, cv2.COLOR_GRAY2RGB)
+        
         # Normalize the face ROI
         face_roi = face_roi / 255.0
         
         # Reshape the face ROI to the input shape of the emotion model
-        face_roi = face_roi.reshape((1, 48, 48, 1))
+        face_roi = face_roi.reshape((1, 48, 48, 3))
         
         # Make predictions on the face ROI using the emotion model
         predictions = emotion_model.predict(face_roi)
