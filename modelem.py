@@ -4,13 +4,16 @@ from keras.utils import to_categorical
 from sklearn.model_selection import train_test_split
 from PIL import Image
 import os
-
+from sklearn.preprocessing import LabelEncoder
 
 # Specify the path to the train folder
 train_folder = 'archive/train'
 
 # Get the list of emotion folders
 emotion_folders = [f for f in os.listdir(train_folder) if os.path.isdir(os.path.join(train_folder, f))]
+
+# Create a dictionary to map emotion folders to integer labels
+emotion_labels = {folder: i for i, folder in enumerate(emotion_folders)}
 
 # Initialize lists to store image paths and labels
 image_paths = []
@@ -26,8 +29,8 @@ for emotion_folder in emotion_folders:
         # Get the full path to the image file
         image_path = os.path.join(train_folder, emotion_folder, image_file)
         
-        # Get the label (emotion) from the folder name
-        label = emotion_folder
+        # Get the label (emotion) from the folder name and map it to an integer label
+        label = emotion_labels[emotion_folder]
         
         # Append the image path and label to the lists
         image_paths.append(image_path)
@@ -37,6 +40,7 @@ for emotion_folder in emotion_folders:
 X = []
 for image_path in image_paths:
     image = Image.open(image_path)
+    image = image.convert('RGB')  # Ensure the image is loaded with three color channels
     image = image.resize((48, 48))  # Resize to 48x48
     image = np.array(image) / 255.0  # Normalize pixel values
     X.append(image)
