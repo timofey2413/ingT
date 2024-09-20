@@ -1,36 +1,61 @@
 import cv2
-from fer import FER
+import numpy as np
+from keras.models import load_model
 
-# Initialize the webcam
+# Load the cascade classifier for face detection
+face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+
+# Load the emotion recognition model
+emotion_model = load_model('emotion_model.h5')
+
+# Create a video capture object
 cap = cv2.VideoCapture(0)
 
 while True:
-    # Read a frame from the webcam
+    # Read a frame from the camera
     ret, frame = cap.read()
     
-    # Convert the frame to RGB (FER expects RGB images)
-    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    # Convert the frame to grayscale
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     
-    # Create an instance of the FER detector
-    emo_detector = FER(mtcnn=True)
+    # Detect faces in the grayscale image
+    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
     
-    # Detect emotions in the frame
-    captured_emotions = emo_detector.detect_emotions(frame_rgb)
+    # Loop through each face
+    for (x, y, w, h) in faces:
+        # Extract the face region of interest (ROI)
+        face_roi = gray[y:y+h, x:x+w]
+        
+        # Resize the face ROI to the input size of the emotion model
+        face_roi = cv2.resize(face_roi, (48, 48))
+        
+        # Normalize the face ROI
+        face_roi = face_roi / 255.0
+        
+        # Reshape the face ROI to the input shape of the emotion model
+        face_roi = face_roi.reshape((1, 48, 48, 1))
+        
+        # Make predictions on the face ROI using the emotion model
+        predictions = emotion_model.predict(face_roi)
+        
+        # Get the index of the highest probability emotion
+        emotion_index = np.argmax(predictions)
+        
+        # Map the emotion index to an emotion label
+        emotion_labels = ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral']
+        emotion_label = emotion_labels[emotion_index]
+        
+        # Draw a red square around the face with the emotion label
+        cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 0, 255), 2)
+        cv2.putText(frame, emotion_label, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
     
-    # Get the dominant emotion and its score
-    dominant_emotion, emotion_score = emo_detector.top_emotion(frame_rgb)
-    
-    # Print the detected emotions and dominant emotion
-    print("Captured emotions:", captured_emotions)
-    print("Dominant emotion:", dominant_emotion, "with score:", emotion_score)
-    
-    # Display the frame with the detected emotions
-    cv2.imshow("Detected Emotions", frame)
+    # Display the output
+    cv2.imshow('Face Detection and Emotion Recognition', frame)
     
     # Exit on key press
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
-# Release the webcam and close the window
+# Release the video capture object
 cap.release()
 cv2.destroyAllWindows()
