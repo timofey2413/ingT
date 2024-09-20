@@ -1,30 +1,61 @@
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
-from tensorflow.keras.datasets import mnist
+import cv2
+import numpy as np
+from keras.models import load_model
 
-# Загрузка данных
-(x_train, y_train), (x_test, y_test) = mnist.load_data()
+# Load the cascade classifier for face detection
+face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
-# Предварительная обработка данных
-x_train = x_train.astype('float32') / 255.0
-x_test = x_test.astype('float32') / 255.0
+# Load the emotion recognition model
+emotion_model = load_model('emotion_model.h5')
 
-# Создание модели
-model = Sequential()
-model.add(Conv2D(32, (3, 3), activation='relu', input_shape=(28, 28, 1)))
-model.add(MaxPooling2D((2, 2)))
-model.add(Flatten())
-model.add(Dense(10, activation='softmax'))
+# Create a video capture object
+cap = cv2.VideoCapture(0)
 
-# Компиляция модели
-model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+while True:
+    # Read a frame from the camera
+    ret, frame = cap.read()
+    
+    # Convert the frame to grayscale
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    
+    # Detect faces in the grayscale image
+    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+    
+    # Loop through each face
+    for (x, y, w, h) in faces:
+        # Extract the face region of interest (ROI)
+        face_roi = gray[y:y+h, x:x+w]
+        
+        # Resize the face ROI to the input size of the emotion model
+        face_roi = cv2.resize(face_roi, (48, 48))
+        
+        # Normalize the face ROI
+        face_roi = face_roi / 255.0
+        
+        # Reshape the face ROI to the input shape of the emotion model
+        face_roi = face_roi.reshape((1, 48, 48, 1))
+        
+        # Make predictions on the face ROI using the emotion model
+        predictions = emotion_model.predict(face_roi)
+        
+        # Get the index of the highest probability emotion
+        emotion_index = np.argmax(predictions)
+        
+        # Map the emotion index to an emotion label
+        emotion_labels = ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral']
+        emotion_label = emotion_labels[emotion_index]
+        
+        # Draw a red square around the face with the emotion label
+        cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 0, 255), 2)
+        cv2.putText(frame, emotion_label, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+    
+    # Display the output
+    cv2.imshow('Face Detection and Emotion Recognition', frame)
+    
+    # Exit on key press
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
 
-# Обучение модели
-model.fit(x_train, y_train, epochs=5, batch_size=32)
-
-# Оценка модели
-loss, accuracy = model.evaluate(x_test, y_test)
-print(f'Loss: {loss}, Accuracy: {accuracy}')
-
-# Сохранение модели
-model.save('emotion_model.h5')
+# Release the video capture object
+cap.release()
+cv2.destroyAllWindows()
