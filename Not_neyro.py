@@ -3,7 +3,7 @@ import cv2
 # создать новый объект камеру
 cap = cv2.VideoCapture(0)
 # инициализировать поиск лица (по умолчанию каскад Хаара)
-face_cascade = cv2.CascadeClassifier("face_bok2.xml")
+face_cascade = cv2.CascadeClassifier("Face/face_bok2.xml")
 
 while True:
     # чтение изображения с камеры
@@ -17,6 +17,7 @@ while True:
         cv2.rectangle(image, (x, y), (x + width, y + height), color=(255, 0, 0), thickness=2)
     #cropped = image[y:y + height, x:x + width]
     cv2.imshow("image", image)
+    cv2.imwrite("image.jpg", image)
     if cv2.waitKey(1) == ord("q"):
         break
 
