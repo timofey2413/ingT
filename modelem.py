@@ -1,4 +1,3 @@
-import zipfile
 import pandas as pd
 import numpy as np
 from keras.utils import to_categorical
@@ -6,15 +5,9 @@ from sklearn.model_selection import train_test_split
 from PIL import Image
 import os
 
-# Specify the path to the archive
-archive_path = 'path/to/archive.zip'
-
-# Extract the archive
-with zipfile.ZipFile(archive_path, 'r') as zip_ref:
-    zip_ref.extractall('path/to/extract/folder')
 
 # Specify the path to the train folder
-train_folder = 'path/to/extract/folder/train'
+train_folder = 'archive/train'
 
 # Get the list of emotion folders
 emotion_folders = [f for f in os.listdir(train_folder) if os.path.isdir(os.path.join(train_folder, f))]
