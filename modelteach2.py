@@ -80,4 +80,4 @@ model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accur
 model.fit(X_train, y_train, epochs=20, batch_size=64, validation_data=(X_test, y_test))  # increased epochs and batch size
 
 # Save the trained model
-model.save('emotion_model4.h5')
+model.save('emotion_model5.h5')
