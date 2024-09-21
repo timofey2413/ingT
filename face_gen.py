@@ -2,6 +2,7 @@
 import cv2
 # библиотека для вызова системных функций
 import os
+import sqlite3 as sl
 # получаем путь к этому скрипту
 path = os.path.dirname(os.path.abspath(__file__))
 # указываем, что мы будем искать лица по примитивам Хаара
@@ -9,12 +10,35 @@ detector = cv2.CascadeClassifier("face.xml")
 # счётчик изображений
 i=0
 # расстояния от распознанного лица до рамки
+con = sl.connect('test.db')
+cursor = con.cursor()
+# открываем базу
+with con:
+    # получаем количество таблиц с нужным нам именем
+    data = con.execute("select count(*) from sqlite_master where type='table' and name='bd'")
+    for row in data:
+        # если таких таблиц нет
+        if row[0] == 0:
+            
+            # создаём таблицу для товаров
+            with con:
+                con.execute("""
+                    CREATE TABLE bd(
+                        id PRIMARY KEY,
+                        name TEXT
+                    );
+                """)
+
 offset=50
+
 # запрашиваем номер пользователя
 id = input("Введите id пользователя: ")
 name = input(str("Введите имя пользователя: "))
-database = open('DataBase.txt', 'w')
-database.write(id + ' = ' + name)
+cursor.execute("INSERT INTO 'bd' ('id') VALUES (?)ON CONFLICT(id) DO UPDATE SET id=excluded.id;", (id,))
+cursor.execute("INSERT INTO 'bd' ('name') VALUES (?)", (name,))
+#cursor.execute("INSERT INTO 'bd' ('id') values(?)", (id,))
+#cursor.execute('INSERT INTO bd (name) values(?)', (name))
+
 # получаем доступ к камере
 video=cv2.VideoCapture(0)
 # запускаем цикл
@@ -44,4 +68,8 @@ while True:
         # удалаяем все созданные окна
         cv2.destroyAllWindows()
         # останавливаем цикл
+        with con:
+            data = con.execute("SELECT * FROM bd")
+        for row in data:
+            print(row)
         break
