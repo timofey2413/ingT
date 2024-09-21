@@ -18,6 +18,14 @@ else:
 # Create a video capture object
 cap = cv2.VideoCapture(0)
 
+def calculate_ear(eye_roi):
+    # Calculate the eye aspect ratio (EAR)
+    # This implementation is simplified and may not work well for all cases
+    # You can improve it by using more advanced techniques, such as contour detection
+    h, w = eye_roi.shape
+    ear = (w / h)
+    return ear
+
 while True:
     # Read a frame from the camera
     ret, frame = cap.read()
@@ -53,8 +61,13 @@ while True:
             if ear < 0.2:
                 blink_detected = True
         
-        # Calculate the average EAR
-        ear_avg = ear_sum / len(eyes)
+        # Check if there are any eyes detected
+        if len(eyes) > 0:
+            # Calculate the average EAR
+            ear_avg = ear_sum / len(eyes)
+        else:
+            ear_avg = 0  # or some other default value
+            blink_detected = False  # or some other default value
         
         # Draw a rectangle around the face with the emotion label and blink detection
         cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 0, 255), 2)
@@ -81,11 +94,3 @@ while True:
 # Release the video capture object
 cap.release()
 cv2.destroyAllWindows()
-
-def calculate_ear(eye_roi):
-    # Calculate the eye aspect ratio (EAR)
-    # This implementation is simplified and may not work well for all cases
-    # You can improve it by using more advanced techniques, such as contour detection
-    h, w = eye_roi.shape
-    ear = (w / h)
-    return ear
