@@ -7,21 +7,18 @@ import os
 from sklearn.preprocessing import LabelEncoder
 
 # Specify the path to the train folder
-train_folder = 'archive/train'
+train_folder = 'archive50/train'
 
 # Get the list of emotion folders
 emotion_folders = [f for f in os.listdir(train_folder) if os.path.isdir(os.path.join(train_folder, f))]
 
-# Add sweat folder to the list
-emotion_folders.append('sweat')
-
 # Create a dictionary to map emotion folders to integer labels
 emotion_labels = {folder: i for i, folder in enumerate(emotion_folders)}
+
 
 # Initialize lists to store image paths and labels
 image_paths = []
 labels = []
-sweat_labels = []
 
 # Loop through each emotion folder
 for emotion_folder in emotion_folders:
@@ -39,12 +36,6 @@ for emotion_folder in emotion_folders:
         # Append the image path and label to the lists
         image_paths.append(image_path)
         labels.append(label)
-        
-        # Add sweat label (1 if sweat, 0 if not)
-        if emotion_folder == 'sweat':
-            sweat_labels.append(1)
-        else:
-            sweat_labels.append(0)
 
 # Load and preprocess the images
 X = []
@@ -60,11 +51,11 @@ X = np.array(X)
 # Convert labels to categorical
 y = to_categorical(labels)
 
-# Convert sweat labels to categorical
-y_sweat = np.array(sweat_labels)
-
 # Split the data into training and testing sets
-X_train, X_test, y_train, y_test, y_train_sweat, y_test_sweat = train_test_split(X, y, y_sweat, test_size=0.05, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1 , random_state=42)
+
+# Define the model architecture
+# ...
 
 # Define the model architecture
 from keras.models import Sequential
@@ -77,16 +68,17 @@ model.add(Conv2D(64, (3, 3), activation='relu'))
 model.add(MaxPooling2D((2, 2)))
 model.add(Conv2D(128, (3, 3), activation='relu'))
 model.add(MaxPooling2D((2, 2)))
+model.add(Conv2D(256, (3, 3), activation='relu'))  # added another layer
+model.add(MaxPooling2D((2, 2)))
 model.add(Flatten())
-model.add(Dense(128, activation='relu'))
-model.add(Dense(len(emotion_folders) - 1, activation='softmax'))  # Emotion recognition output
-model.add(Dense(1, activation='sigmoid'))  # Sweat detection output
+model.add(Dense(256, activation='relu'))  # increased units
+model.add(Dense(len(emotion_folders), activation='softmax'))
 
 # Compile the model
-model.compile(optimizer='adam', loss=['categorical_crossentropy', 'binary_crossentropy'], metrics=['accuracy', 'accuracy'])
+model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
 # Train the model
-model.fit(X_train, [y_train, y_train_sweat], epochs=10, batch_size=32, validation_data=(X_test, [y_test, y_test_sweat]))
+model.fit(X_train, y_train, epochs=30, batch_size=128, validation_data=(X_test, y_test))  # increased epochs and batch size
 
 # Save the trained model
-model.save('emotion_model_sweat.h5')
+model.save('emotion_model7.h5')
