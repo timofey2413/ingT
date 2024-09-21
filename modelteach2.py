@@ -7,7 +7,7 @@ import os
 from sklearn.preprocessing import LabelEncoder
 
 # Specify the path to the train folder
-train_folder = 'archive/train'
+train_folder = 'archive1kk'
 
 # Get the list of emotion folders
 emotion_folders = [f for f in os.listdir(train_folder) if os.path.isdir(os.path.join(train_folder, f))]
@@ -54,6 +54,9 @@ y = to_categorical(labels)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.05, random_state=42)
 
 # Define the model architecture
+# ...
+
+# Define the model architecture
 from keras.models import Sequential
 from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
 
@@ -64,15 +67,17 @@ model.add(Conv2D(64, (3, 3), activation='relu'))
 model.add(MaxPooling2D((2, 2)))
 model.add(Conv2D(128, (3, 3), activation='relu'))
 model.add(MaxPooling2D((2, 2)))
+model.add(Conv2D(256, (3, 3), activation='relu'))  # added another layer
+model.add(MaxPooling2D((2, 2)))
 model.add(Flatten())
-model.add(Dense(128, activation='relu'))
+model.add(Dense(256, activation='relu'))  # increased units
 model.add(Dense(len(emotion_folders), activation='softmax'))
 
 # Compile the model
 model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
 # Train the model
-model.fit(X_train, y_train, epochs=10, batch_size=32, validation_data=(X_test, y_test))
+model.fit(X_train, y_train, epochs=20, batch_size=64, validation_data=(X_test, y_test))  # increased epochs and batch size
 
 # Save the trained model
-model.save('emotion_model3.h5')
+model.save('emotion_model4.h5')
