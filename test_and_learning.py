@@ -7,7 +7,7 @@ import os
 from sklearn.preprocessing import LabelEncoder
 
 # Specify the path to the train folder
-train_folder = 'archive50'
+train_folder = 'archive1kk'
 
 # Get the list of emotion folders
 emotion_folders = [f for f in os.listdir(train_folder) if os.path.isdir(os.path.join(train_folder, f))]
@@ -81,4 +81,4 @@ model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accur
 model.fit(X_train, y_train, epochs=50, batch_size=256, validation_data=(X_test, y_test))  # increased epochs and batch size
 
 # Save the trained model
-model.save('emotion_model7.h5')
+model.save('emotion_model6.h5')
