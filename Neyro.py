@@ -3,6 +3,8 @@ import cv2
 # библиотека для вызова системных функций
 import os
 # получаем путь к этому скрипту
+import io
+
 path = os.path.dirname(os.path.abspath(__file__))
 # создаём новый распознаватель лиц
 recognizer = cv2.face.LBPHFaceRecognizer_create()
@@ -12,8 +14,10 @@ recognizer.read(path+r'/trainer/trainer.yml')
 faceCascade = cv2.CascadeClassifier("face.xml")
 # получаем доступ к камере
 cam = cv2.VideoCapture(0)
+
 # настраиваем шрифт для вывода подписей
 font = cv2.FONT_HERSHEY_SIMPLEX
+
 # запускаем цикл
 while True:
     # получаем видеопоток
@@ -34,7 +38,7 @@ while True:
             #nbr_predicted='Nikita Veselovsky'
         
         # добавляем текст к рамке
-        cv2.putText(im,str(nbr_predicted), (x,y+h),font, 1.1, (0,255,0))
+        cv2.putText(im, str(nbr_predicted), (x,y+h),font, 1.1, (0,255,0))
         # выводим окно с изображением с камеры
         cv2.imshow('Face recognition',im)
         # делаем паузу

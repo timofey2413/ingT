@@ -11,7 +11,10 @@ i=0
 # расстояния от распознанного лица до рамки
 offset=50
 # запрашиваем номер пользователя
-name = input('Введите id пользователя: ')
+id = input("Введите id пользователя: ")
+name = input(str("Введите имя пользователя: "))
+database = open('DataBase.txt', 'w')
+database.write(id + ' = ' + name)
 # получаем доступ к камере
 video=cv2.VideoCapture(0)
 # запускаем цикл
@@ -27,7 +30,7 @@ while True:
         # увеличиваем счётчик кадров
         i=i+1
         # записываем файл на диск
-        cv2.imwrite("dataSet/face-"+str(name) +'.'+ str(i) + ".jpg", gray[y-offset:y+h+offset,x-offset:x+w+offset])
+        cv2.imwrite("dataSet/face-"+str(id) +'.'+ str(i) + ".jpg", gray[y-offset:y+h+offset,x-offset:x+w+offset])
         # формируем размеры окна для вывода лица
         cv2.rectangle(im,(x-50,y-50),(x+w+50,y+h+50),(225,0,0),2)
         # показываем очередной кадр, который мы запомнили
