@@ -15,6 +15,7 @@ emotion_folders = [f for f in os.listdir(train_folder) if os.path.isdir(os.path.
 # Create a dictionary to map emotion folders to integer labels
 emotion_labels = {folder: i for i, folder in enumerate(emotion_folders)}
 
+
 # Initialize lists to store image paths and labels
 image_paths = []
 labels = []
@@ -51,7 +52,7 @@ X = np.array(X)
 y = to_categorical(labels)
 
 # Split the data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.05, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1 , random_state=42)
 
 # Define the model architecture
 # ...
@@ -77,7 +78,7 @@ model.add(Dense(len(emotion_folders), activation='softmax'))
 model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
 # Train the model
-model.fit(X_train, y_train, epochs=20, batch_size=64, validation_data=(X_test, y_test))  # increased epochs and batch size
+model.fit(X_train, y_train, epochs=50, batch_size=256, validation_data=(X_test, y_test))  # increased epochs and batch size
 
 # Save the trained model
-model.save('emotion_model5.h5')
+model.save('emotion_model6.h5')

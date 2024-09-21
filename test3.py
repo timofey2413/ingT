@@ -7,9 +7,9 @@ import os
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
 # Check if the emotion recognition model file exists
-if os.path.exists('emotion_model4.h5'):
+if os.path.exists('emotion_model6.h5'):
     # Load the emotion recognition model
-    emotion_model = load_model('emotion_model4.h5')
+    emotion_model = load_model('emotion_model6.h5')
 else:
     print("Error: File 'emotion_recogniton_model.h5' not found.")
     exit()
@@ -51,7 +51,7 @@ while True:
         emotion_index = np.argmax(predictions)
         
         # Map the emotion index to an emotion label
-        emotion_labels = ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral']
+        emotion_labels = ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral', 'Contempt']
         emotion_label = emotion_labels[emotion_index]
         
         # Draw a red square around the face with the emotion label
