@@ -61,5 +61,4 @@ while cv2.waitKey(1)<0:
         print("Лица не распознаны")
     # выводим картинку с камеры
     cv2.imshow("Face detection", resultImg)
-    cropped = frameOpencvDnn[100:y2, x1:x2]
-    cv2.imwrite("image.jpg", cropped)
+
