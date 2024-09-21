@@ -51,7 +51,7 @@ X = np.array(X)
 y = to_categorical(labels)
 
 # Split the data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.05, random_state=42)
 
 # Define the model architecture
 from keras.models import Sequential
@@ -75,4 +75,4 @@ model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accur
 model.fit(X_train, y_train, epochs=10, batch_size=32, validation_data=(X_test, y_test))
 
 # Save the trained model
-model.save('emotion_recognition_model.h5')
+model.save('emotion_model3.h5')
