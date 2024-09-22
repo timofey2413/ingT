@@ -100,6 +100,24 @@ def update_frame():
         emotion_labels = ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral', 'Contempt']
         emotion_label = emotion_labels[emotion_index]
         
+        # Calculate the threat probability based on the emotion label
+        threat_probability = 0.0
+        if emotion_label in ['Angry', 'Fear', 'Disgust']:
+            threat_probability = 0.7
+        elif emotion_label in ['Sad', 'Surprise']:
+            threat_probability = 0.3
+        else:
+            threat_probability = 0.1
+
+        # Calculate the stress level based on the emotion label
+        stress_level = 0.0
+        if emotion_label in ['Angry', 'Fear', 'Disgust']:
+            stress_level = 0.8
+        elif emotion_label in ['Sad', 'Surprise']:
+            stress_level = 0.5
+        else:
+            stress_level = 0.2
+
         # Make predictions on the face ROI using the lip moisture detection model
         lip_predictions = lip_model.predict(face_roi)
         
@@ -110,9 +128,9 @@ def update_frame():
         lip_labels = ['dry', 'wet']
         lip_label = lip_labels[lip_index]
         
-        # Draw a red square around the face with the emotion and lip moisture labels
+        # Draw a red square around the face with the emotion, lip moisture, threat probability, and stress level labels
         cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 0, 255), 2)
-        cv2.putText(frame, f"{emotion_label} - {lip_label}", (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+        cv2.putText(frame, f"{emotion_label} - {lip_label} - Threat: {threat_probability:.2f} - Stress: {stress_level:.2f}", (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
     
     # Convert the frame to a Tkinter-compatible image
     img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
