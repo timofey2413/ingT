@@ -37,15 +37,7 @@ while True:
         # рисуем прямоугольник вокруг лица
         cv2.rectangle(im,(x-50,y-50),(x+w+50,y+h+50),(225,0,0),2)
         # если мы знаем id пользователя
-        if(nbr_predicted==1):
-            # подставляем вместо него имя человека
-            nbr_predicted='Nikita'
-        if(nbr_predicted == 2):
-            nbr_predicted='Aleksander'
-        if(nbr_predicted == 3):
-            nbr_predicted='Ignat'
-        if(nbr_predicted == 4):
-            nbr_predicted='Miron'
+        
 
         
         # добавляем текст к рамке
