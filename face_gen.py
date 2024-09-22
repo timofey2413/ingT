@@ -68,8 +68,4 @@ while True:
         # удалаяем все созданные окна
         cv2.destroyAllWindows()
         # останавливаем цикл
-        with con:
-            data = con.execute("SELECT * FROM bd")
-        for row in data:
-            print(row)
         break
