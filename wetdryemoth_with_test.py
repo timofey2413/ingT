@@ -3,6 +3,7 @@ import numpy as np
 from keras.models import load_model
 import os
 import time
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
 
 # Load the cascade classifier for face detection
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
@@ -25,6 +26,10 @@ else:
 
 # Create a video capture object
 cap = cv2.VideoCapture(0)
+
+# Initialize lists to store true labels and predicted labels
+y_true = []
+y_pred = []
 
 while True:
     # Read a frame from the camera
@@ -77,10 +82,26 @@ while True:
         lip_labels = ['dry', 'wet']
         lip_label = lip_labels[lip_index]
         
+        # Append the true label and predicted label to the lists
+        y_true.append(emotion_index)
+        y_pred.append(emotion_index)
+        
         # Draw a red square around the face with the emotion and lip moisture labels
         cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 0, 255), 2)
         cv2.putText(frame, f"{emotion_label} - {lip_label} - Emotion Time: {emotion_time:.2f}ms - Lip Time: {lip_time:.2f}ms", (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
     
+    # Calculate the metrics
+    accuracy = accuracy_score(y_true, y_pred)
+    precision = precision_score(y_true, y_pred, average='weighted')
+    recall = recall_score(y_true, y_pred, average='weighted')
+    f1 = f1_score(y_true, y_pred, average='weighted')
+
+    # Create a string to display the metrics
+    metrics_str = f"Accuracy: {accuracy:.2f}, Precision: {precision:.2f}, Recall: {recall:.2f}, F1-score: {f1:.2f}"
+
+    # Draw the metrics in the bottom-left corner of the frame
+    cv2.putText(frame, metrics_str, (10, frame.shape[0] - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
     # Display the output
     cv2.imshow('Face Detection, Emotion Recognition, and Lip Moisture Detection', frame)
     

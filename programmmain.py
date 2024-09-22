@@ -24,7 +24,6 @@ if os.path.exists(emotion_model_path):
     # Load the emotion recognition model
     emotion_model = load_model(emotion_model_path)
 else:
-    print("Error: File 'emotion_recognition_model.h5' not found.")
     exit()
 
 # Check if the lip moisture detection model file exists
@@ -33,7 +32,6 @@ if os.path.exists(lip_model_path):
     # Load the lip moisture detection model
     lip_model = load_model(lip_model_path)
 else:
-    print("Error: File 'wet_dry_model.h5' not found.")
     exit()
 
 # Create a Tkinter window
@@ -44,8 +42,26 @@ window.title("Face Detection, Emotion Recognition, and Lip Moisture Detection")
 canvas = tk.Canvas(window, width=800, height=600)
 canvas.pack()
 
+# Get a list of available cameras
+camera_indices = []
+for i in range(10):  # Try up to 10 cameras
+    cap = cv2.VideoCapture(i)
+    if cap.isOpened():
+        camera_indices.append(i)
+        cap.release()
+
+# Create a dropdown menu to select the camera
+camera_var = tk.StringVar()
+camera_var.set(camera_indices[0])  # Default to the first camera
+camera_menu = tk.OptionMenu(window, camera_var, *camera_indices)
+camera_menu.pack()
+
+# Add a label to the dropdown menu
+camera_label = tk.Label(window, text="Камеры")
+camera_label.pack()
+
 # Create a video capture object
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(int(camera_var.get()))
 
 def update_frame():
     # Read a frame from the camera
