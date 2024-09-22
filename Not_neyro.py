@@ -20,6 +20,11 @@ for filename in os.listdir(folder_path):
         image_path = os.path.join(folder_path, filename)
         image = cv2.imread(image_path)
 
+        # Check if the image is read successfully
+        if image is None:
+            print(f"Error: Unable to read image file {image_path}")
+            continue
+
         # Convert the image to grayscale
         image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
