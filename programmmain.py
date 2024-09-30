@@ -4,6 +4,7 @@ from keras.models import load_model
 import os
 import tkinter as tk
 from PIL import Image, ImageTk
+import time
 
 # Get the current platform (Windows or macOS)
 platform = os.name
@@ -63,7 +64,10 @@ camera_label.pack()
 # Create a video capture object
 cap = cv2.VideoCapture(int(camera_var.get()))
 
+start_time = time.time()
+
 def update_frame():
+    global start_time
     # Read a frame from the camera
     ret, frame = cap.read()
     
@@ -90,6 +94,9 @@ def update_frame():
         # Reshape the face ROI to the input shape of the models
         face_roi = face_roi.reshape((1, 48, 48, 3))
         
+        # Measure the time before making predictions
+        start_prediction_time = time.time()
+        
         # Make predictions on the face ROI using the emotion model
         emotion_predictions = emotion_model.predict(face_roi)
         
@@ -113,7 +120,7 @@ def update_frame():
         stress_level = 0.0
         if emotion_label in ['Angry', 'Fear', 'Disgust']:
             stress_level = 0.8
-        elif emotion_label in ['Sad', 'Surprise']:
+        elif emotion_label in ['Sad', ' Surprise']:
             stress_level = 0.5
         else:
             stress_level = 0.2
@@ -128,9 +135,15 @@ def update_frame():
         lip_labels = ['dry', 'wet']
         lip_label = lip_labels[lip_index]
         
-        # Draw a red square around the face with the emotion, lip moisture, threat probability, and stress level labels
+        # Measure the time after making predictions
+        end_prediction_time = time.time()
+        
+        # Calculate the time elapsed for making predictions
+        prediction_time = (end_prediction_time - start_prediction_time) * 1000  # Convert to milliseconds
+        
+        # Draw a red square around the face with the emotion, lip moisture, threat probability, stress level, and prediction time labels
         cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 0, 255), 2)
-        cv2.putText(frame, f"{emotion_label} - {lip_label} - Threat: {threat_probability:.2f} - Stress: {stress_level:.2f}", (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+        cv2.putText(frame, f"{emotion_label} - {lip_label} - Threat: {threat_probability:.2f} - Stress: {stress_level:.2f} - Prediction Time: {prediction_time:.2f} ms", (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
     
     # Convert the frame to a Tkinter-compatible image
     img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
