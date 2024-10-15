@@ -39,6 +39,8 @@ else:
 window = tk.Tk()
 window.title("Face Detection, Emotion Recognition, and Lip Moisture Detection")
 
+
+
 # Create a canvas to display the video
 canvas = tk.Canvas(window, width=800, height=600)
 canvas.pack()
@@ -57,6 +59,27 @@ camera_var.set(camera_indices[0])  # Default to the first camera
 camera_menu = tk.OptionMenu(window, camera_var, *camera_indices)
 camera_menu.pack()
 
+# Create labels to display the results
+emotion_label_var = tk.StringVar()
+lip_label_var = tk.StringVar()
+stress_level_var = tk.StringVar()
+threat_probability_var = tk.StringVar()
+prediction_time_var = tk.StringVar()
+accuracy_var = tk.StringVar()
+
+label1 = tk.Label(window, textvariable=emotion_label_var)
+label1.pack(side=tk.LEFT, fill=tk.X, expand=False, pady=10)
+label2 = tk.Label(window, textvariable=lip_label_var)
+label2.pack(side=tk.LEFT, fill=tk.X, expand=False, pady=10)
+label3 = tk.Label(window, textvariable=stress_level_var)
+label3.pack(side=tk.LEFT, fill=tk.X, expand=False, pady=10)
+label4 = tk.Label(window, textvariable=threat_probability_var)
+label4.pack(side=tk.LEFT, fill=tk.X, expand=False, pady=10)
+label5 = tk.Label(window, textvariable=prediction_time_var)
+label5.pack(side=tk.LEFT, fill=tk.X, expand=False, pady=10)
+label6 = tk.Label(window, textvariable=accuracy_var)
+label6.pack(side=tk.LEFT, fill=tk.X, expand=False, pady=10)
+
 # Add a label to the dropdown menu
 camera_label = tk.Label(window, text="Камеры")
 camera_label.pack()
@@ -70,6 +93,9 @@ def update_frame():
     global start_time
     # Read a frame from the camera
     ret, frame = cap.read()
+    
+    # Resize the frame
+    frame = cv2.resize(frame, (640, 480))
     
     # Convert the frame to grayscale
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -120,7 +146,7 @@ def update_frame():
         stress_level = 0.0
         if emotion_label in ['Angry', 'Fear', 'Disgust']:
             stress_level = 0.8
-        elif emotion_label in ['Sad', ' Surprise']:
+        elif emotion_label in ['Sad', 'Surprise']:
             stress_level = 0.5
         else:
             stress_level = 0.2
@@ -140,6 +166,14 @@ def update_frame():
         
         # Calculate the time elapsed for making predictions
         prediction_time = (end_prediction_time - start_prediction_time) * 1000  # Convert to milliseconds
+        
+        # Update the labels
+        emotion_label_var.set(f"Emotion: {emotion_label}")
+        lip_label_var.set(f"Lip Moisture: {lip_label}")
+        stress_level_var.set(f"Stress Level: {stress_level:.2f}")
+        threat_probability_var.set(f"Threat Probability: {threat_probability:.2f}")
+        prediction_time_var.set(f"Prediction Time: {prediction_time:.2f} ms")
+        accuracy_var.set(f"Accuracy: {emotion_label}")  # Assuming accuracy is the same as emotion label
         
         # Draw a red square around the face with the emotion, lip moisture, threat probability, stress level, and prediction time labels
         cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 0, 255), 2)
