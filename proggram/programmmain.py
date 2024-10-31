@@ -11,8 +11,8 @@ from PyQt5.QtQml import QQmlApplicationEngine
 
 # Get the current platform (Windows or macOS)
 platform = os.name
-# with open('style.qss', 'r') as f:
-#     app.setStyleSheet(f.read())
+with open('style.qss', 'r') as f:
+    app.setStyleSheet(f.read())
 # Set the folder path based on the platform
 if platform == 'nt':  # Windows
     folder_path = os.path.join(os.path.expanduser('~'), 'Documents', 'ingt')
