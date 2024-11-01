@@ -31,7 +31,7 @@ while True:
         # рисуем прямоугольник вокруг л≈ица
         cv2.rectangle(im,(x-50,y-50),(x+w+50,y+h+50),(225,0,0),2)
         # добавляем текст к рамке
-        cv2.putText(im, nbr_predicted, (x,y+h),font, 1.1, (0,255,0))
+        cv2.putText(im, str(nbr_predicted), (x,y+h),font, 1.1, (0,255,0))
         # выводим окно с изображением с камеры
         cv2.imshow('Face recognition',im)
         # делаем паузу
