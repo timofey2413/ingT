@@ -33,7 +33,7 @@ offset=50
 
 # запрашиваем номер пользователя
 id = input("Введите id пользователя: ")
-name = input(str("Введите имя пользователя: "))
+#name = input(str("Введите имя пользователя: "))
 #cursor.execute("INSERT INTO 'bd' (id) VALUES (?)ON CONFLICT(id) DO UPDATE SET id=execute.id;", (id,))
 #cursor.execute("INSERT INTO 'bd' ('name') VALUES (?)", (name,))
 #cursor.execute("INSERT INTO 'bd' ('id') values(?)", (id,))

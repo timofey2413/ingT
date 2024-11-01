@@ -11,14 +11,18 @@ from PyQt5.QtQml import QQmlApplicationEngine
 
 # Get the current platform (Windows or macOS)
 platform = os.name
+
+# Set the stylesheet based on the platform
 # with open('style.qss', 'r') as f:
 #     app.setStyleSheet(f.read())
+
 # Set the folder path based on the platform
 if platform == 'nt':  # Windows
     folder_path = os.path.join(os.path.expanduser('~'), 'Documents', 'ingt')
 else:  # macOS
     folder_path = os.path.join(os.path.expanduser('~'), 'Documents', 'ingt')
-
+    
+stylesheet_path = os.path.join(folder_path, 'style.qss')
 # Load the cascade classifier for face detection
 face_cascade_path = "haarcascade_frontalface_default.xml"
 face_cascade = cv2.CascadeClassifier(face_cascade_path)
@@ -36,6 +40,17 @@ if os.path.exists(lip_model_path):
     lip_model = load_model(lip_model_path)
 else:
     exit()
+
+def load_stylesheet(filename):
+    try:
+        with open(filename, 'r') as file:  # Используем 'file' как контекстную переменную
+            return file.read()
+    except FileNotFoundError:
+        print(f"Файл стилей '{filename}' не найден.")
+        return ""  # Возвращаем пустую строку, если файл не найден
+    except Exception as e:
+        print(f"Ошибка при загрузке файла стилей: {e}")
+        return ""  # Возвращаем пустую строку в случае других ошибок
 
 class FaceEmotionApp(QWidget):
     def __init__(self):
@@ -192,6 +207,9 @@ class FaceEmotionApp(QWidget):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    stylesheet = load_stylesheet(stylesheet_path)  # Загружаем стили из нового пути
+    if stylesheet:
+        app.setStyleSheet(stylesheet)  # Устанавливаем стиль только если он был загружен успешно
     window = FaceEmotionApp()
     window.show()
     sys.exit(app.exec_())
