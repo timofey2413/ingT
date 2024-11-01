@@ -1,54 +1,114 @@
 import cv2
+import numpy as np
+from keras.models import load_model
 import os
+import time
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
 
-# Initialize the face cascade classifier
-face_cascade = cv2.CascadeClassifier("Face/face_bok2.xml")
+# Load the cascade classifier for face detection
+face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
-# Set the folder path and the output folder path
-folder_path = "dry"
-output_folder_path = "customarchive/dry"
+# Check if the emotion recognition model file exists
+if os.path.exists('emotion_model7.h5'):
+    # Load the emotion recognition model
+    emotion_model = load_model('emotion_model7.h5')
+else:
+    print("Error: File 'emotion_recognition_model.h5' not found.")
+    exit()
 
-# Create the output folder if it doesn't exist
-if not os.path.exists(output_folder_path):
-    os.makedirs(output_folder_path)
+# Check if the lip moisture detection model file exists
+if os.path.exists('wet_dry_model.h5'):
+    # Load the lip moisture detection model
+    lip_model = load_model('wet_dry_model.h5')
+else:
+    print("Error: File 'wet_dry_model.h5' not found.")
+    exit()
 
-# Loop through all files in the folder
-for filename in os.listdir(folder_path):
-    # Check if the file is an image
-    if filename.endswith(".jpg") or filename.endswith(".png"):
-        # Read the image
-        image_path = os.path.join(folder_path, filename)
-        image = cv2.imread(image_path)
+# Create a video capture object
+cap = cv2.VideoCapture(0)
 
-        # Check if the image is read successfully
-        if image is None:
-            print(f"Error: Unable to read image file {image_path}")
-            continue
+# Initialize lists to store true labels and predicted labels
+y_true = []
+y_pred = []
 
-        # Convert the image to grayscale
-        image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+while True:
+    # Read a frame from the camera
+    ret, frame = cap.read()
+    
+    # Convert the frame to grayscale
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    
+    # Detect faces in the grayscale image
+    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+    
+    # Loop through each face
+    for (x, y, w, h) in faces:
+        # Extract the face region of interest (ROI)
+        face_roi = gray[y:y+h, x:x+w]
+        
+        # Resize the face ROI to the input size of the models
+        face_roi = cv2.resize(face_roi, (48, 48))
+        
+        # Convert grayscale to RGB
+        face_roi = cv2.cvtColor(face_roi, cv2.COLOR_GRAY2RGB)
+        
+        # Normalize the face ROI
+        face_roi = face_roi / 255.0
+        
+        # Reshape the face ROI to the input shape of the models
+        face_roi = face_roi.reshape((1, 48, 48, 3))
+        
+        # Measure time for emotion recognition
+        start_time = time.time()
+        emotion_predictions = emotion_model.predict(face_roi)
+        emotion_time = time.time() - start_time
+        
+        # Get the index of the highest probability emotion
+        emotion_index = np.argmax(emotion_predictions)
+        
+        # Map the emotion index to an emotion label
+        emotion_labels = ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral', 'Contempt']
+        emotion_label = emotion_labels[emotion_index]
+        
+        # Measure time for lip moisture detection
+        start_time = time.time()
+        lip_predictions = lip_model.predict(face_roi)
+        lip_time = time.time() - start_time
+        
+        # Get the index of the highest probability
+        lip_index = np.argmax(lip_predictions)
+        
+        # Map the index to a label
+        lip_labels = ['dry', 'wet']
+        lip_label = lip_labels[lip_index]
+        
+        # Append the true label and predicted label to the lists
+        y_true.append(emotion_index)
+        y_pred.append(emotion_index)
+        
+        # Draw a red square around the face with the emotion and lip moisture labels
+        cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 0, 255), 2)
+        cv2.putText(frame, f"{emotion_label} - {lip_label} - Emotion Time: {emotion_time:.2f}ms - Lip Time: {lip_time:.2f}ms", (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+    
+    # Calculate the metrics
+    accuracy = accuracy_score(y_true, y_pred)
+    precision = precision_score(y_true, y_pred, average='weighted')
+    recall = recall_score(y_true, y_pred, average='weighted')
+    f1 = f1_score(y_true, y_pred, average='weighted')
 
-        # Detect faces in the image
-        faces = face_cascade.detectMultiScale(image_gray, 1.3, 5)
+    # Create a string to display the metrics
+    metrics_str = f"Accuracy: {accuracy:.2f}, Precision: {precision:.2f}, Recall: {recall:.2f}, F1-score: {f1:.2f}"
 
-        # Loop through each detected face
-        for x, y, width, height in faces:
-            # Increase the size of the cropped area to include the whole head
-            x -= width // 4
-            y -= height // 2
-            width += width // 2
-            height += height // 2
+    # Draw the metrics in the bottom-left corner of the frame
+    cv2.putText(frame, metrics_str, (10, frame.shape[0] - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-            # Ensure the cropped area is within the image boundaries
-            x = max(0, x)
-            y = max(0, y)
-            width = min(width, image.shape[1] - x)
-            height = min(height, image.shape[0] - y)
+    # Display the output
+    cv2.imshow('Face Detection, Emotion Recognition, and Lip Moisture Detection', frame)
+    
+    # Exit on key press
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
 
-            # Crop the face
-            cropped_face = image[y:y + height, x:x + width]
-
-            # Save the cropped face with the same filename as the original image
-            output_filename = filename
-            output_path = os.path.join(output_folder_path, output_filename)
-            cv2.imwrite(output_path, cropped_face)
+# Release the video capture object
+cap.release()
+cv2.destroyAllWindows()

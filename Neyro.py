@@ -1,49 +1,12 @@
-# подключаем библиотеку компьютерного зрения
+from insightface.app import FaceAnalysis
 import cv2
-# библиотека для вызова системных функций
-import os
-# получаем путь к этому скрипту
-import io
-import sqlite3
-conn = sqlite3.connect('DataBase.db')
-cursor = conn.cursor()
-path = os.path.dirname(os.path.abspath(__file__))
-# создаём новый распознаватель лиц
-recognizer = cv2.face.LBPHFaceRecognizer_create()
-# добавляем в него модель, которую мы обучили на прошлых этапах
-recognizer.read(path+r'/trainer/trainer.yml')
-# указываем, что мы будем искать лица по примитивам Хаара
-faceCascade = cv2.CascadeClassifier("face.xml")
-# получаем доступ к камере
-cam = cv2.VideoCapture(0)
-
-# настраиваем шрифт для вывода подписей
-font = cv2.FONT_HERSHEY_SIMPLEX
-
-# запускаем цикл
-while True:
-    # получаем видеопоток
-    ret, im =cam.read()
-    # переводим его в ч/б
-    gray=cv2.cvtColor(im,cv2.COLOR_BGR2GRAY)
-    # определяем лица на видео
-    faces=faceCascade.detectMultiScale(gray, scaleFactor=1.2, minNeighbors=5, minSize=(100, 100), flags=cv2.CASCADE_SCALE_IMAGE)
-    # перебираем все найденные лица\
-    
-    for(x,y,w,h) in faces:
-        # получаем id пользователя
-        nbr_predicted,coord = recognizer.predict(gray[y:y+h,x:x+w])
-
-        # рисуем прямоугольник вокруг лица
-        cv2.rectangle(im,(x-50,y-50),(x+w+50,y+h+50),(225,0,0),2)
-        # если мы знаем id пользователя
-        
-
-        
-        # добавляем текст к рамке
-        cv2.putText(im, str(nbr_predicted), (x,y+h),font, 1.1, (0,255,0))
-        # выводим окно с изображением с камеры
-        cv2.imshow('Face recognition',im)
-        # делаем паузу
-        cv2.waitKey(10)
-
+app = FaceAnalysis(name="buffalo_sc",providers=['CPUExecutionProvider'])
+app.prepare(ctx_id=0, det_size=(256, 256))  #подготовка нейросети
+img = cv2.imread("/home/tapok/Документы/Test_hlebalo/ingT/Images/people.png") #считываем изображение
+faces = app.get(img) #ищем лица на изображении и получаем информацию о них
+for face in faces:
+    print(face)
+x, y, x2, y2 = face.bbox #получаем границы лица
+cropped = img[int(y):int(y2), int(x):int(x2)] #вырезаем лицо из изображения
+cv2.imshow('image', cropped) #показываем лицо
+cv2.waitKey(0)
