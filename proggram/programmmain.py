@@ -1,13 +1,16 @@
 import sys
 import cv2
 import numpy as np
+import time
 from keras.models import load_model
 import os
-import time
 from PyQt5.QtWidgets import (QApplication, QWidget, QLabel, QComboBox, QVBoxLayout, 
-                             QPushButton, QFileDialog)
+                             QPushButton, QFileDialog, QHBoxLayout)
 from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtCore import QTimer
+from scipy.signal import find_peaks, savgol_filter
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
 # Get the current platform (Windows or macOS)
 platform = os.name
@@ -62,42 +65,59 @@ class FaceEmotionApp(QWidget):
         self.setWindowTitle("Face Detection, Emotion Recognition, and Lip Moisture Detection")
 
         # Create layout
-        self.layout = QVBoxLayout()
+        self.layout = QHBoxLayout()  # Use horizontal layout to place video and graph side by side
         self.setLayout(self.layout)
+
+        # Create a vertical layout for the video feed
+        self.video_layout = QVBoxLayout()
+        self.layout.addLayout(self.video_layout)
 
         # Create a label for displaying the video
         self.video_label = QLabel()
-        self.layout.addWidget(self.video_label)
+        self.video_layout.addWidget(self.video_label)
 
         # Create a dropdown menu to select the camera
         self.camera_combo = QComboBox()
-        self.layout.addWidget(self.camera_combo)
+        self.video_layout.addWidget(self.camera_combo)
 
         # Button to start video from camera
         self.videobutton = QPushButton("Start Video")
         self.videobutton.clicked.connect(self.start_video)
-        self.layout.addWidget(self.videobutton)
+        self.video_layout.addWidget(self.videobutton)
 
         # Button to open video file
         self.open_video_button = QPushButton("Open Video File")
         self.open_video_button.clicked.connect(self.open_video)
-        self.layout.addWidget(self.open_video_button)
+        self.video_layout.addWidget(self.open_video_button)
+
+        # Create a Matplotlib Figure for the graph
+        self.figure = plt.figure()
+        self.canvas = FigureCanvas(self.figure)
+        self.layout.addWidget(self.canvas)
+
+        # Create a vertical layout for the results
+        self.results_layout = QVBoxLayout()
+        self.layout.addLayout(self.results_layout)
+
+        # QLabel for displaying heart rate
+        self.heart_rate_label = QLabel("Heart Rate: - уд./мин")
+        self.results_layout.addWidget(self.heart_rate_label)
 
         # Create labels to display the results
         self.emotion_label = QLabel("Emotion: ")
-        self.layout.addWidget(self.emotion_label)
+        self.results_layout.addWidget(self.emotion_label)
         self.lip_label = QLabel("Lip Moisture: ")
-        self.layout.addWidget(self.lip_label)
+        self.results_layout.addWidget(self.lip_label)
         self.stress_level_label = QLabel("Stress Level: ")
-        self.layout.addWidget(self.stress_level_label)
+        self.results_layout.addWidget(self.stress_level_label)
         self.threat_probability_label = QLabel("Threat Probability: ")
-        self.layout.addWidget(self.threat_probability_label)
+        self.results_layout.addWidget(self.threat_probability_label)
         self.prediction_time_label = QLabel("Prediction Time: ")
-        self.layout.addWidget(self.prediction_time_label)
+        self.results_layout.addWidget(self.prediction_time_label)
         self.accuracy_label = QLabel("Accuracy: ")
-        self.layout.addWidget(self.accuracy_label)
+        self.results_layout.addWidget(self.accuracy_label)
         self.recognized_label = QLabel("Recognized ID: ")
-        self.layout.addWidget(self.recognized_label)
+        self.results_layout.addWidget(self.recognized_label)
 
         # Get a list of available cameras
         self.camera_indices = []
@@ -116,10 +136,14 @@ class FaceEmotionApp(QWidget):
 
         # Set up a timer to update the video frame
         self.timer = QTimer()
-        self .timer.timeout.connect(self.update_frame)
-        self.timer.start(1)
+        self.timer.timeout.connect(self.update_frame)
+        self.timer.start(30)
 
         self.is_video_file = False  # Flag to determine if a video file is being played
+
+        self.signal = []  # Initialize signal for heart rate detection
+        self.time_stamps = []  # Initialize timestamps for heart rate detection
+        self.count = 0  # Initialize count for frames
 
     def open_video(self):
         video_path, _ = QFileDialog.getOpenFileName(self, "Open Video File", "", "Videos (*.mp4 *.avi)")
@@ -212,6 +236,26 @@ class FaceEmotionApp(QWidget):
                     self.prediction_time_label.setText(f"Prediction Time: {prediction_time:.2f} ms")
                     self.accuracy_label.setText(f"Accuracy: {emotion_label}")  # Assuming accuracy is the same as emotion label
 
+                    # Extract cheek area
+                    cheek_area = frame[y + int(h/2):y + h, x + int(w/4):x + int(3*w/4)]
+
+                    # Extract red channel
+                    b, g, r = cv2.split(cheek_area)
+                    mean_red = np.mean(r)
+                    self.signal.append(mean_red)
+                    self.time_stamps.append(self.count / 30)  # Assuming 30 FPS
+                    self.count += 1
+
+                    # Calculate heart rate
+                    if len(self.signal) > 100:
+                        smoothed_signal = savgol_filter(self.signal, 51, 3)
+                        peaks, _ = find_peaks(smoothed_signal, height=170)
+                        peak_times = [self.time_stamps[p] for p in peaks]
+                        if len(peak_times) > 1:
+                            intervals = np.diff(peak_times)
+                            heart_rate = 60 / np.mean(intervals)
+                            self.heart_rate_label.setText(f"Heart Rate: {heart_rate:.2f} уд./мин")
+
                     cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)
                     cv2.putText(frame, f"{emotion_label} - {lip_label} - Threat: {threat_probability:.2f} - Stress: {stress_level:.2f} - Prediction Time: {prediction_time:.2f} ms", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
@@ -221,10 +265,43 @@ class FaceEmotionApp(QWidget):
                 bytes_per_line = ch * w
                 q_img = QImage(frame.data, w, h, bytes_per_line, QImage.Format_RGB888)
                 self.video_label.setPixmap(QPixmap.fromImage(q_img))
-                
+
+                # Update graph
+                self.plot_graph()
+
             else:
                 self.timer.stop()
                 self.cap.release()
+
+    def plot_graph(self):
+        self.figure.clear()
+        ax = self.figure.add_subplot(111)
+        ax.plot(self.time_stamps, self.signal, color='r')
+        ax.set_xlabel('Время (с)')
+        ax.set_ylabel('Среднее значение красного канала')
+        ax.set_title('Фотоплетизмограмма')
+
+        # Сглаживание сигнала
+        window_length = 51
+        polyorder = 3
+        if len(self.signal) > window_length:
+            smoothed_signal = savgol_filter(self.signal, window_length, polyorder)
+        else:
+            smoothed_signal = self.signal
+
+        # Поиск пиков в сигнале
+        peaks, _ = find_peaks(smoothed_signal, height=170)  # Установите порог для нахождения пиков
+        peak_times = [self.time_stamps[p] for p in peaks]  # Время пиков
+
+        # Расчет ЧСС
+        if len(peak_times) > 1:
+            intervals = np.diff(peak_times)  # Интервалы между пиками
+            heart_rate = 60 / np.mean(intervals)  # Рассчитать среднюю ЧСС в ударах в минуту
+            self.heart_rate_label.setText(f'ЧСС: {heart_rate:.2f} уд./мин')  # Обновить текст QLabel
+
+        # Отображение графика пиков
+        ax.plot(peak_times, [smoothed_signal[p] for p in peaks], "x", color='blue')  # Отметить пики на графике
+        self.canvas.draw()
 
     def change_camera(self):
         self.cap.release()
@@ -232,15 +309,11 @@ class FaceEmotionApp(QWidget):
 
     def closeEvent(self, event):
         if self.cap is not None:
-            self.cap.release()
+            self.cap.release()  # Освобождение ресурсов
         event.accept()
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     app = QApplication(sys.argv)
-    stylesheet_path = os.path.join(folder_path, 'style.qss')
-    stylesheet = load_stylesheet(stylesheet_path)
-    if stylesheet:
-        app.setStyleSheet(stylesheet)
     window = FaceEmotionApp()
     window.show()
     sys.exit(app.exec_())

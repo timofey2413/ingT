@@ -6,6 +6,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from PyQt5.QtWidgets import QApplication, QVBoxLayout, QWidget, QLabel
 from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtCore import QTimer
+from scipy.signal import find_peaks, savgol_filter
 
 class VideoCapture(QWidget):
     def __init__(self):
@@ -27,6 +28,10 @@ class VideoCapture(QWidget):
         self.figure = plt.figure()
         self.canvas = FigureCanvas(self.figure)
         self.layout.addWidget(self.canvas)
+
+        # QLabel для отображения ЧСС
+        self.heart_rate_label = QLabel("ЧСС: - уд./мин", self)
+        self.layout.addWidget(self.heart_rate_label)
 
         self.setLayout(self.layout)
 
@@ -65,7 +70,6 @@ class VideoCapture(QWidget):
 
                 # Извлечение области щек (примерно)
                 cheek_area = frame[y + int(h/2):y + h, x + int(w/4):x + int(3*w/4)]  # Извлекаем нижнюю часть лица
-                # Измените координаты, если хотите более точно настроить область
 
                 # Извлечение цветовых каналов
                 b, g, r = cv2.split(cheek_area)
@@ -88,11 +92,32 @@ class VideoCapture(QWidget):
 
     def plot_graph(self):
         self.figure.clear()
-        ax = self.figure.add_subplot(111)
+        ax = self.figure.add_subplot(111 )
         ax.plot(self.time_stamps, self.signal, color='r')
         ax.set_xlabel('Время (с)')
         ax.set_ylabel('Среднее значение красного канала')
         ax.set_title('Фотоплетизмограмма')
+
+        # Сглаживание сигнала
+        window_length = 51
+        polyorder = 3
+        if len(self.signal) > window_length:
+            smoothed_signal = savgol_filter(self.signal, window_length, polyorder)
+        else:
+            smoothed_signal = self.signal
+
+        # Поиск пиков в сигнале
+        peaks, _ = find_peaks(smoothed_signal, height=170)  # Установите порог для нахождения пиков
+        peak_times = [self.time_stamps[p] for p in peaks]  # Время пиков
+
+        # Расчет ЧСС
+        if len(peak_times) > 1:
+            intervals = np.diff(peak_times)  # Интервалы между пиками
+            heart_rate = 60 / np.mean(intervals)  # Рассчитать среднюю ЧСС в ударах в минуту
+            self.heart_rate_label.setText(f'ЧСС: {heart_rate:.2f} уд./мин')  # Обновить текст QLabel
+
+        # Отображение графика пиков
+        ax.plot(peak_times, [smoothed_signal[p] for p in peaks], "x", color='blue')  # Отметить пики на графике
         self.canvas.draw()
 
     def closeEvent(self, event):
