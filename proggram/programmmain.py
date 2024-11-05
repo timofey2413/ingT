@@ -64,6 +64,9 @@ class FaceEmotionApp(QWidget):
         super().__init__()
         self.setWindowTitle("Face Detection, Emotion Recognition, and Lip Moisture Detection")
 
+        stylesheet = load_stylesheet(os.path.join(folder_path, 'style.qss'))  # Укажите путь к вашему файлу стилей
+        self.setStyleSheet(stylesheet)
+
         # Create layout
         self.layout = QHBoxLayout()  # Use horizontal layout to place video and graph side by side
         self.setLayout(self.layout)
