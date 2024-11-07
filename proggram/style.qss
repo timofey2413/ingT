@@ -5,4 +5,75 @@ qlineargradient(x1:0, y1:0, x2:0, y2: 1,  stop: 1 #fc9551);
 QLabel {
   color:#6b6b6b;
 }
-/*General settings*/
+/* Общие настройки */
+QWidget {
+    background-color: #2e2e2e; /* Темно-серый фон */
+    font-family: 'Arial', sans-serif; /* Шрифт */
+    font-size: 14px; /* Размер шрифта */
+    color: #ffffff; /* Белый текст */
+}
+
+/* Заголовок окна */
+QWidget#FaceEmotionApp {
+    background-color: #3c3c3c; /* Темно-серый фон для окна */
+    border: 1px solid #444444; /* Темно-серый бордер */
+    border-radius: 10px; /* Закругленные углы */
+}
+
+/* Метки */
+QLabel {
+    color: #ffffff; /* Белый текст */
+    margin: 5px; /* Отступы вокруг меток */
+}
+
+/* Выпадающее меню */
+QComboBox {
+    background-color: #ffcccc; /* Пастельно-красный фон */
+    color: #333333; /* Темно-серый текст */
+    border: 1px solid #ff9999; /* Светло-красный бордер */
+    border-radius: 5px; /* Закругленные углы */
+    padding: 5px; /* Внутренние отступы */
+}
+
+/* Выпадающее меню - активное состояние */
+QComboBox:hover {
+    border: 1px solid #ff6666; /* Ярко-красный бордер при наведении */
+}
+
+/* Кнопки (если будут добавлены) */
+QPushButton {
+    background-color: #ff6666; /* Ярко-красный фон */
+    color: white; /* Белый текст */
+    border: none; /* Без бордера */
+    border-radius: 5px; /* Закругленные углы */
+    padding: 10px; /* Внутренние отступы */
+}
+
+QPushButton:hover {
+    background-color: #ff4d4d; /* Темно-красный фон при наведении */
+}
+
+/* Поля для ввода (если будут добавлены) */
+QLineEdit {
+    background-color: #ffcccc; /* Пастельно-красный фон */
+    color: #333333; /* Темно-серый текст */
+    border: 1px solid #ff9999; /* Светло-красный бордер */
+    border-radius: 5px; /* Закругленные углы */
+    padding: 5px; /* Внутренние отступы */
+}
+
+/* Поля для ввода - фокус */
+QLineEdit:focus {
+    border: 1px solid #ff6666; /* Ярко-красный бордер при фокусе */
+}
+
+/* Состояния меток для результатов */
+QLabel#emotion_label,
+QLabel#lip_label,
+QLabel#stress_level_label,
+QLabel#threat_probability_label,
+QLabel#prediction_time_label,
+QLabel#accuracy_label {
+    font-weight: bold; /* Жирный текст */
+    color: #ffffff; /* Белый текст */
+}
